@@ -11,47 +11,41 @@ namespace NetCoreLambda
 {
     public class Function
     {
-        // Configuration
         private IConfiguration Configuration { get; }
 
         public Function()
         {
-            // Set up dependency resolution
-            var resolver = new DependencyResolver(ConfigureServices);
-
-            // Get Configuration from DI system
-            Configuration = resolver.ServiceProvider.GetService<IConfiguration>();
+            IServiceCollection services = new ServiceCollection();
+            ConfigureServices(services);
+            IServiceProvider provider = services.BuildServiceProvider();
+            Configuration = provider.GetService<IConfiguration>();
         }
 
-        // Use this ctor from unit tests that can mock IConfiguration
+        /// <summary>
+        /// Constructor for unit tests that can mock IConfiguration.
+        /// </summary>
+        /// <param name="configuration"></param>
         public Function(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
         /// <summary>
-        /// A simple function that takes a config key and returns a value.
+        /// A simple function that takes a configuration key and returns a value.
         /// </summary>
-        /// <param name="input">Configuration key</param>
-        /// <param name="context">ILambdaContext</param>
-        /// <returns>Configuration value</returns>
+        /// <param name="input"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public string FunctionHandler(string input, ILambdaContext context)
         {
-            // Get config setting using input as a key
             return Configuration[input] ?? "None";
         }
 
         private void ConfigureServices(IServiceCollection services)
         {
-            // Add Configuration to DI system
             services.AddConfiguration(builder =>
             {
-                // Get ASPNETCORE_ENVIRONMENT
-                var environment = Environment.GetEnvironmentVariable(
-                    Constants.EnvironmentVariables.AspnetCoreEnvironment)
-                    ?? Constants.Environments.Production;
-
-                // Build config
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?? "Production";
                 return builder
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
